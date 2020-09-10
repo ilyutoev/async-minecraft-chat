@@ -1,6 +1,7 @@
 import asyncio
 import os
 import logging
+import json
 
 
 DEFAULT_SERVER_HOST = os.getenv('MINECHAT_SERVER_HOST', 'minechat.dvmn.org')
@@ -13,25 +14,32 @@ logging.basicConfig(level=logging.DEBUG)
 async def main():
 
     reader, writer = await asyncio.open_connection(DEFAULT_SERVER_HOST, DEFAULT_SERVER_PORT)
+    data = await reader.readline()
 
-    while True:
-        data = await reader.readline()
-        if not data:
-            break
-        received_message = data.decode()
-        logging.debug(received_message)
+    # Получаем первое сообщение из чата
+    received_message = data.decode()
+    logging.debug(received_message)
 
-        if 'Enter your personal hash' in received_message:
-            sent_message = f'{CHAT_HASH}\n'
-            logging.debug(sent_message)
-            writer.write(sent_message.encode())
-            await writer.drain()
-        else:
-            sent_message = 'Hello\n\n'
-            logging.debug(sent_message)
-            writer.write(sent_message.encode())
-            await writer.drain()
-            break
+    # Отправляем хеш пользователя
+    sent_message = f'{CHAT_HASH}\n'
+    logging.debug(sent_message)
+    writer.write(sent_message.encode())
+    await writer.drain()
+
+    # Получаем сообщение и проверяем верно ли авторизовались
+    data = await reader.readline()
+    received_message_json = json.loads(data.decode())
+    logging.debug(received_message_json)
+
+    if received_message_json is None:
+        print('Неизвестный токен. Проверьте его или зарегистрируйте заново.')
+        return
+
+    # Отправляем сообщение в чат
+    sent_message = 'Hello\n\n'
+    logging.debug(sent_message)
+    writer.write(sent_message.encode())
+    await writer.drain()
 
     writer.close()
     await writer.wait_closed()
