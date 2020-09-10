@@ -46,6 +46,7 @@ async def register(writer, reader):
 
 async def submit_message(writer, message):
     """Отправялем сообщение в чат"""
+    message = message.replace("\n", "\\n")
     sent_message = f'{message}\n'
     logging.debug(sent_message)
     writer.write(sent_message.encode())
@@ -77,7 +78,9 @@ async def main():
     if is_authorise is False:
         await register(writer, reader)
 
-    await submit_message(writer, 'Hello')
+    await submit_message(writer, 'Hello\n')
+
+    await submit_message(writer, 'Test')
 
     writer.close()
     await writer.wait_closed()
