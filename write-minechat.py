@@ -33,6 +33,23 @@ async def main():
 
     if received_message_json is None:
         print('Неизвестный токен. Проверьте его или зарегистрируйте заново.')
+        # Получаем строку о вводе логина нового пользователя
+        data = await reader.readline()
+        logging.debug(data.decode())
+
+        # Регистрируем нового пользователя
+        sent_message = 'User\n'
+        logging.debug(sent_message)
+        writer.write(sent_message.encode())
+        await writer.drain()
+
+        # Получаем сообщение и сохранем хеш
+        data = await reader.readline()
+        received_message_json = json.loads(data.decode())
+        logging.debug(received_message_json)
+
+        new_hash = received_message_json.get('account_hash')
+        print(f'Ваш новый токен: {new_hash}')
         return
 
     # Отправляем сообщение в чат
