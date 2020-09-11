@@ -2,13 +2,26 @@ import asyncio
 import os
 import logging
 import json
-
+import argparse
 
 DEFAULT_SERVER_HOST = os.getenv('MINECHAT_SERVER_HOST', 'minechat.dvmn.org')
 DEFAULT_SERVER_PORT = os.getenv('MINECHAT_SERVER_PORT', 5050)
-CHAT_HASH = 'c11a9f9e-f36f-11ea-8c47-0242ac110002'
+DEFAULT_TOKEN = os.getenv('MINECHAT_TOKEN')
+DEFAULT_USERNAME = os.getenv('MINECHAT_USERNAME')
+DEFAULT_MESSAGE = os.getenv('MINECHAT_MESSAGE')
 
 logging.basicConfig(level=logging.DEBUG)
+
+
+def get_arguments():
+    """Получаем аргументы командной строки, переданные скрипту."""
+    parser = argparse.ArgumentParser(description='Script save minechat messages to file.')
+    parser.add_argument('--host', type=str, default=DEFAULT_SERVER_HOST, help='Minechat server host.')
+    parser.add_argument('--port', type=int, default=DEFAULT_SERVER_PORT, help='Minechat server port.')
+    parser.add_argument('--token', type=str, default=DEFAULT_TOKEN, help="User token.")
+    parser.add_argument('--username', type=str, default=DEFAULT_USERNAME, help="Username for registration.")
+    parser.add_argument('--message', type=str, default=DEFAULT_MESSAGE, help="Sending message.")
+    return parser.parse_args()
 
 
 async def authorise(writer, reader, token):
@@ -25,14 +38,14 @@ async def authorise(writer, reader, token):
     return True
 
 
-async def register(writer, reader):
-    """Регистрируем нового пользователя и возаращем токен"""
+async def register(writer, reader, username):
+    """Регистрируем нового пользователя и возвращем токен."""
     # Получаем строку о вводе логина нового пользователя
     data = await reader.readline()
     logging.debug(data.decode())
 
     # Регистрируем нового пользователя
-    await submit_message(writer, 'User')
+    await submit_message(writer, username)
 
     # Получаем сообщение и сохранем хеш
     received_message_json = await read_message_json(reader)
@@ -68,19 +81,37 @@ async def read_message_json(reader):
 
 
 async def main():
-    reader, writer = await asyncio.open_connection(DEFAULT_SERVER_HOST, DEFAULT_SERVER_PORT)
+    args = get_arguments()
+
+    if all((args.username, args.token, args.message)):
+        print('Необходимо передать в скрипт токен (или имя пользователя) и сообщение.')
+        return
+
+    reader, writer = await asyncio.open_connection(args.host, args.port)
 
     # Получаем первое сообщение из чата
     await read_message_str(reader)
 
-    is_authorise = await authorise(writer, reader, CHAT_HASH)
+    # Авторизуемся
+    is_authorise = False
+    if args.token:
+        is_authorise = await authorise(writer, reader, args.token)
+
+    # Регистрируем нового пользователя, если не удалось авторизоваться и передано имя пользователя
+    if is_authorise is False and args.username:
+        if args.token is None:
+            # Отправляем пустую строку вместо токена
+            await submit_message(writer, '')
+        await register(writer, reader, args.username)
+        is_authorise = True
 
     if is_authorise is False:
-        await register(writer, reader)
+        print('Для отправки сообщения необходимо авторизоваться: '
+              'передать валидный токен или зарегистрировать нового пользователя.')
 
-    await submit_message(writer, 'Hello\n')
-
-    await submit_message(writer, 'Test')
+    # Отправляем сообщение
+    if is_authorise is True and args.message:
+        await submit_message(writer, args.message)
 
     writer.close()
     await writer.wait_closed()
