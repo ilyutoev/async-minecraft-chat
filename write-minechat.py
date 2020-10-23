@@ -4,6 +4,9 @@ import logging
 import json
 import argparse
 
+from connection_helper import open_connection
+
+
 DEFAULT_SERVER_HOST = os.getenv('MINECHAT_SERVER_HOST', 'minechat.dvmn.org')
 DEFAULT_SERVER_PORT = os.getenv('MINECHAT_SERVER_PORT', 5050)
 DEFAULT_TOKEN = os.getenv('MINECHAT_TOKEN')
@@ -89,33 +92,30 @@ async def main():
         print('Необходимо передать в скрипт токен (или имя пользователя) и сообщение.')
         return
 
-    reader, writer = await asyncio.open_connection(args.host, args.port)
+    async with open_connection(args.host, args.port) as (reader, writer):
+        # Получаем первое сообщение из чата
+        await read_message_str(reader)
 
-    # Получаем первое сообщение из чата
-    await read_message_str(reader)
+        # Авторизуемся
+        is_authorise = False
+        if args.token:
+            is_authorise = await authorise(writer, reader, args.token)
 
-    # Авторизуемся
-    is_authorise = False
-    if args.token:
-        is_authorise = await authorise(writer, reader, args.token)
+        # Регистрируем нового пользователя, если не удалось авторизоваться и передано имя пользователя
+        if is_authorise is False and args.username:
+            if args.token is None:
+                # Отправляем пустую строку вместо токена
+                await submit_message(writer, '')
+            await register(writer, reader, args.username)
+            is_authorise = True
 
-    # Регистрируем нового пользователя, если не удалось авторизоваться и передано имя пользователя
-    if is_authorise is False and args.username:
-        if args.token is None:
-            # Отправляем пустую строку вместо токена
-            await submit_message(writer, '')
-        await register(writer, reader, args.username)
-        is_authorise = True
+        if is_authorise is False:
+            print('Для отправки сообщения необходимо авторизоваться: '
+                  'передать валидный токен или зарегистрировать нового пользователя.')
 
-    if is_authorise is False:
-        print('Для отправки сообщения необходимо авторизоваться: '
-              'передать валидный токен или зарегистрировать нового пользователя.')
+        # Отправляем сообщение
+        if is_authorise is True and args.message:
+            await submit_message(writer, args.message)
 
-    # Отправляем сообщение
-    if is_authorise is True and args.message:
-        await submit_message(writer, args.message)
-
-    writer.close()
-    await writer.wait_closed()
 
 asyncio.run(main())

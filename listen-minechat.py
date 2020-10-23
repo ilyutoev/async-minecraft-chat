@@ -5,6 +5,8 @@ import os
 
 import aiofiles
 
+from connection_helper import open_connection
+
 
 DEFAULT_SERVER_HOST = os.getenv('MINECHAT_SERVER_HOST', 'minechat.dvmn.org')
 DEFAULT_SERVER_PORT = os.getenv('MINECHAT_SERVER_PORT', 5000)
@@ -23,16 +25,15 @@ def get_arguments():
 async def main():
     args = get_arguments()
 
-    reader, writer = await asyncio.open_connection(args.host, args.port)
+    async with open_connection(args.host, args.port) as (reader, writer):
+        async with aiofiles.open(args.history, mode='a') as f:
+            while True:
+                data = await reader.readline()
+                if not data:
+                    break
 
-    async with aiofiles.open(args.history, mode='a') as f:
-        while True:
-            data = await reader.readline()
-            if not data:
-                break
+                await f.write(f'[{datetime.now().strftime("%d.%m.%Y %H:%M")}] {data.decode()}')
+                print(data.decode())
 
-            await f.write(f'[{datetime.now().strftime("%d.%m.%Y %H:%M")}] {data.decode()}')
-        writer.close()
-    await writer.wait_closed()
 
 asyncio.run(main())
