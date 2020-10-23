@@ -36,8 +36,8 @@ async def authorise(writer, reader, token):
 
     if not received_message_json:
         print('Неизвестный токен.')
-        return False
-    return True
+
+    return bool(received_message_json)
 
 
 async def register(writer, reader, username):
