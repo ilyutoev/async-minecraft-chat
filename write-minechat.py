@@ -96,24 +96,24 @@ async def main():
         await read_message_str(reader)
 
         # Авторизуемся
-        is_authorise = False
+        is_authorised = False
         if args.token:
-            is_authorise = await authorise(writer, reader, args.token)
+            is_authorised = await authorise(writer, reader, args.token)
 
         # Регистрируем нового пользователя, если не удалось авторизоваться и передано имя пользователя
-        if not is_authorise and args.username:
+        if not is_authorised and args.username:
             if not args.token:
                 # Отправляем пустую строку вместо токена
                 await submit_message(writer, '')
             await register(writer, reader, args.username)
-            is_authorise = True
+            is_authorised = True
 
-        if not is_authorise:
+        if not is_authorised:
             print('Для отправки сообщения необходимо авторизоваться: '
                   'передать валидный токен или зарегистрировать нового пользователя.')
 
         # Отправляем сообщение
-        if is_authorise and args.message:
+        if is_authorised and args.message:
             await submit_message(writer, args.message)
 
 
