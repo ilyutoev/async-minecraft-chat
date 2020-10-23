@@ -35,5 +35,5 @@ async def main():
                 await f.write(f'[{datetime.now().strftime("%d.%m.%Y %H:%M")}] {data.decode()}')
                 print(data.decode())
 
-
-asyncio.run(main())
+if __name__ == '__main__':
+    asyncio.run(main())
