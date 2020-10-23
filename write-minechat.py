@@ -35,7 +35,7 @@ async def authorise(writer, reader, token):
     # Получаем сообщение и проверяем верно ли авторизовались
     received_message_json = await read_message_json(reader)
 
-    if received_message_json is None:
+    if not received_message_json:
         print('Неизвестный токен.')
         return False
     return True
@@ -102,19 +102,19 @@ async def main():
             is_authorise = await authorise(writer, reader, args.token)
 
         # Регистрируем нового пользователя, если не удалось авторизоваться и передано имя пользователя
-        if is_authorise is False and args.username:
-            if args.token is None:
+        if not is_authorise and args.username:
+            if not args.token:
                 # Отправляем пустую строку вместо токена
                 await submit_message(writer, '')
             await register(writer, reader, args.username)
             is_authorise = True
 
-        if is_authorise is False:
+        if not is_authorise:
             print('Для отправки сообщения необходимо авторизоваться: '
                   'передать валидный токен или зарегистрировать нового пользователя.')
 
         # Отправляем сообщение
-        if is_authorise is True and args.message:
+        if is_authorise and args.message:
             await submit_message(writer, args.message)
 
 
