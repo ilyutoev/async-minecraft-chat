@@ -10,7 +10,7 @@ DEFAULT_TOKEN = os.getenv('MINECHAT_TOKEN')
 DEFAULT_USERNAME = os.getenv('MINECHAT_USERNAME')
 DEFAULT_MESSAGE = os.getenv('MINECHAT_MESSAGE')
 
-logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 
 def get_arguments():
@@ -42,7 +42,7 @@ async def register(writer, reader, username):
     """Регистрируем нового пользователя и возвращем токен."""
     # Получаем строку о вводе логина нового пользователя
     data = await reader.readline()
-    logging.debug(data.decode())
+    logger.debug(data.decode())
 
     # Регистрируем нового пользователя
     await submit_message(writer, username)
@@ -61,7 +61,7 @@ async def submit_message(writer, message):
     """Отправялем сообщение в чат"""
     message = message.replace("\n", "\\n")
     sent_message = f'{message}\n'
-    logging.debug(sent_message)
+    logger.debug(sent_message)
     writer.write(sent_message.encode())
     await writer.drain()
 
@@ -70,7 +70,7 @@ async def read_message_str(reader):
     """Читаем сообщение из чата и возвращаем строковое представление."""
     data = await reader.readline()
     received_message = data.decode()
-    logging.debug(received_message)
+    logger.debug(received_message)
     return data
 
 
@@ -81,6 +81,8 @@ async def read_message_json(reader):
 
 
 async def main():
+    logger.setLevel(logging.DEBUG)
+
     args = get_arguments()
 
     if all((args.username, args.token, args.message)):
