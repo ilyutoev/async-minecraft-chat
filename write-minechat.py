@@ -11,7 +11,6 @@ DEFAULT_SERVER_HOST = os.getenv('MINECHAT_SERVER_HOST', 'minechat.dvmn.org')
 DEFAULT_SERVER_PORT = os.getenv('MINECHAT_SERVER_PORT', 5050)
 DEFAULT_TOKEN = os.getenv('MINECHAT_TOKEN')
 DEFAULT_USERNAME = os.getenv('MINECHAT_USERNAME')
-DEFAULT_MESSAGE = os.getenv('MINECHAT_MESSAGE')
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +22,7 @@ def get_arguments():
     parser.add_argument('--port', type=int, default=DEFAULT_SERVER_PORT, help='Minechat server port.')
     parser.add_argument('--token', type=str, default=DEFAULT_TOKEN, help="User token.")
     parser.add_argument('--username', type=str, default=DEFAULT_USERNAME, help="Username for registration.")
-    parser.add_argument('--message', type=str, default=DEFAULT_MESSAGE, help="Sending message.")
+    parser.add_argument('--message', type=str, help="Sending message.", required=True)
     return parser.parse_args()
 
 

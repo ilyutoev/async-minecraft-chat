@@ -39,4 +39,3 @@ python write-minechat.py
 - порт сервер (`--port` или `MINECHAT_SERVER_PORT`)
 - токен пользователя (`--token` или `MINECHAT_TOKEN`)
 - имя пользователя (`--username` или `MINECHAT_USERNAME`)
-- текст сообщения (`--message` или `MINECHAT_MESSAGE`)
