@@ -34,17 +34,13 @@ async def authorise(writer, reader, token):
     # Получаем сообщение и проверяем верно ли авторизовались
     received_message = await read_json_message_and_deserialize(reader)
 
-    if not received_message:
-        print('Неизвестный токен.')
-
     return bool(received_message)
 
 
 async def register(writer, reader, username):
     """Регистрируем нового пользователя и возвращем токен."""
     # Получаем строку о вводе логина нового пользователя
-    data = await reader.readline()
-    logger.debug(data.decode())
+    await read_message_str(reader)
 
     # Регистрируем нового пользователя
     await submit_message(writer, username)
@@ -54,9 +50,6 @@ async def register(writer, reader, username):
 
     token = received_message.get('account_hash')
     print(f'Ваш новый токен: {token}')
-
-    # Вычитываем строку о вводе нового сообщения
-    await read_message_str(reader)
 
 
 async def submit_message(writer, message):
@@ -106,6 +99,10 @@ async def main():
                 # Отправляем пустую строку вместо токена
                 await submit_message(writer, '')
             await register(writer, reader, args.username)
+
+            # Вычитываем строку о вводе нового сообщения
+            await read_message_str(reader)
+
             is_authorised = True
 
         if not is_authorised:
